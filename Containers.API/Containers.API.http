@@ -1,0 +1,41 @@
+@host = https://localhost:7195
+
+### Get all forecasts
+GET {{host}}/weather
+Accept: application/json
+
+###
+
+### Get forecast by ID
+GET {{host}}/weather/1
+Accept: application/json
+
+###
+
+### Create new forecast
+POST {{host}}/weather
+Content-Type: application/json
+
+{
+  "date": "2025-05-19",
+  "temperatureC": 22,
+  "summary": "Partly cloudy"
+}
+
+###
+
+### Update forecast
+PUT {{host}}/weather/1002
+Content-Type: application/json
+
+{
+  "id": 1002,
+  "date": "2025-05-19",
+  "temperatureC": 25,
+  "summary": "Updated summary"
+}
+
+###
+
+### Delete forecast
+DELETE {{host}}/weather/3
