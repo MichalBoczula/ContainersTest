@@ -18,6 +18,7 @@ namespace IntegrationTests
         private const ushort MsSqlPort = 1433;
 
         private readonly IContainer _mssqlContainer;
+        private string _connectionString = string.Empty;
 
         public ApplicationFactory()
         {
@@ -34,22 +35,31 @@ namespace IntegrationTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            var host = _mssqlContainer.Hostname;
-            var port = _mssqlContainer.GetMappedPublicPort(MsSqlPort);
-
             builder.ConfigureServices(services =>
             {
+                // Remove old WeatherContext registration
                 services.RemoveAll(typeof(DbContextOptions<WeatherContext>));
 
+                // Re-add WeatherContext with container connection string
                 services.AddDbContext<WeatherContext>(options =>
-                    options.UseSqlServer(
-                        $"Server={host},{port};Database={Database};User Id={Username};Password={Password};TrustServerCertificate=True"));
+                    options.UseSqlServer(_connectionString));
             });
         }
 
         public async Task InitializeAsync()
         {
             await _mssqlContainer.StartAsync();
+
+            var host = _mssqlContainer.Hostname;
+            var port = _mssqlContainer.GetMappedPublicPort(MsSqlPort);
+
+            _connectionString =
+                $"Server={host},{port};Database={Database};User Id={Username};Password={Password};TrustServerCertificate=True";
+
+            // Create scope to run EF Core migration
+            using var scope = Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<WeatherContext>();
+            await dbContext.Database.MigrateAsync();
         }
 
         public new async Task DisposeAsync()
